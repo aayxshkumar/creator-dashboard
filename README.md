@@ -1,5 +1,7 @@
 # Creator Dashboard
 
+> Built as a take-home assignment for Vertx in May 2025.
+
 A full-stack application for content creators to manage profiles, earn credits, and interact with personalized content feeds from various social media platforms.
 
 ---
