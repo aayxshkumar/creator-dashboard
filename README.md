@@ -1,404 +1,116 @@
 # Creator Dashboard
 
+![CI](https://github.com/aayxshkumar/creator-dashboard/actions/workflows/ci.yml/badge.svg)
+
 > Built as a take-home assignment for Vertx in May 2025.
 
-A full-stack application for content creators to manage profiles, earn credits, and interact with personalized content feeds from various social media platforms.
+A full-stack app where content creators register, earn credit points, and browse a content feed they can save, share or report. A Create React App client talks to an Express + MongoDB API that issues JWTs, tracks credits and activity, caches the feed in Redis and pushes notifications over Socket.io. The feed currently serves built-in sample Twitter and Reddit items rather than calling those APIs. No live demo.
 
----
+## Project status
 
-## ✨ Features
+This is an unfinished take-home and does not build or start as committed:
 
-- **JWT-based Authentication**: Secure login and registration with role-based access control (User/Admin)
-- **Credit Points System**: Earn credits for daily logins, profile completion, and content interactions
-- **Multi-source Content Feed**: Aggregated content from Twitter and Reddit APIs
-- **User Dashboard**: View credit balance, saved content, and activity history
-- **Admin Dashboard**: Monitor user analytics and content activity
-- **Content Management**: Save, share, and report content from the feed
-- **Extra Features**:
-  - Redis caching for improved performance
-  - Real-time notifications using WebSockets
+- Client: `npm run build` fails because `src/pages/admin/AdminDashboard.js` imports `components/admin/UsersTable` and `components/admin/ReportedContentTable`, which were never committed. `react-toastify` is also imported but not listed in `client/package.json`.
+- Server: `axios`, `bcryptjs`, `express-validator`, `redis` and `socket.io` are required by the code but not listed in `server/package.json`, so `npm start` fails until they are installed. `utils/cacheManager.js` uses the callback-style Redis v3 API.
 
----
+CI installs both packages from their lockfiles and syntax-checks the server.
 
-## 🛠️ Tech Stack
+## Features
 
-### Backend
-- Node.js & Express.js
-- MongoDB Atlas
-- Redis
-- JWT (Authentication)
-- Docker
-- Socket.io
+- Registration and login with JWT, and `user` / `admin` roles
+- Credits for the daily login, completing a profile, and saving or sharing feed items
+- Feed with save, share and report actions; saved-content page
+- User dashboard with credits and activity
+- Admin dashboard route with user, credit and interaction stats
+- Feed responses cached in Redis for 10 minutes
+- Notifications listed and marked read over REST, with a Socket.io connection for live updates
 
-### Frontend
-- React.js
-- Tailwind CSS
-- Axios
-- Socket.io client
+## Tech stack
 
-### Deployment
-- **Backend**: Google Cloud Run  
-- **Frontend**: Firebase Hosting
+- Client: React 19, React Router 7, Create React App (`react-scripts` 5), Tailwind CSS, Chart.js, Axios, socket.io-client
+- Server: Node.js, Express 5, Mongoose 8, jsonwebtoken, bcrypt, Redis, Socket.io
+- Deployment config: `server/Dockerfile` (Cloud Run style, port 8080) and `server/firebase.json` (Firebase Hosting)
 
----
+## Getting started
 
-## ⚙️ Setup and Installation
+Requires Node.js 20 or newer (CI runs on Node 22), MongoDB, and Redis.
 
-### Prerequisites
-- Node.js (v16+)
-- MongoDB Atlas account
-- Redis (optional for caching)
-- Google Cloud account
-- Firebase account
-
----
-
-### 🔑 Environment Variables
-
-#### Backend (`.env`)
+```bash
+git clone https://github.com/aayxshkumar/creator-dashboard.git
+cd creator-dashboard
 ```
 
-NODE\_ENV=development
-PORT=5000
-MONGO\_URI=your\_mongodb\_atlas\_uri
-JWT\_SECRET=your\_secret\_key
-JWT\_EXPIRE=30d
-REDIS\_URL=your\_redis\_url
-
-TWITTER\_API\_KEY=your\_twitter\_api\_key
-TWITTER\_API\_SECRET=your\_twitter\_api\_secret
-TWITTER\_ACCESS\_TOKEN=your\_access\_token
-TWITTER\_ACCESS\_SECRET=your\_access\_secret
-
-REDDIT\_CLIENT\_ID=your\_reddit\_client\_id
-REDDIT\_CLIENT\_SECRET=your\_reddit\_client\_secret
-REDDIT\_USERNAME=your\_reddit\_username
-REDDIT\_PASSWORD=your\_reddit\_password
-
-```
-
-#### Frontend (`.env`)
-```
-
-REACT\_APP\_API\_URL=[http://localhost:5000/api](http://localhost:5000/api)
-
-````
-
-
-### 🚀 Running Locally
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/aayxshkumar/creator-dashboard.git
-   cd vertx_assignment
-```
-
-2. Install backend dependencies:
-
-   ```bash
-   cd server
-   npm install
-   ```
-
-3. Install frontend dependencies:
-
-   ```bash
-   cd ../client
-   npm install
-   ```
-
-4. Start the backend server:
-
-   ```bash
-   cd ../server
-   npm run dev
-   ```
-
-5. Start the frontend server:
-
-   ```bash
-   cd ../client
-   npm start
-   ```
-
-App should now be running:
-
-* Backend: `http://localhost:5000`
-* Frontend: `http://localhost:3000`
-
----
-
-## ☁️ Deployment
-
-### Backend (Google Cloud Run)
-
-1. Build the Docker image:
-
-   ```bash
-   cd server
-   gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/creator-dashboard-api
-   ```
-
-2. Deploy:
-
-   ```bash
-   gcloud run deploy creator-dashboard-api \
-     --image gcr.io/YOUR_PROJECT_ID/creator-dashboard-api \
-     --platform managed \
-     --region us-central1 \
-     --allow-unauthenticated \
-     --set-env-vars="MONGO_URI=your_uri,JWT_SECRET=your_secret"
-   ```
-
-### Frontend (Firebase)
-
-1. Build the React app:
-
-   ```bash
-   cd client
-   npm run build
-   ```
-
-2. Deploy:
-
-   ```bash
-   firebase deploy --only hosting
-   ```
-
----
-
-## 📚 API Documentation
-
-### Base URL
-
-* Development: `http://localhost:5000/api`
-* Production: `https://creator-dashboard-api-abcdef.run.app/api`
-
----
-
-### 🔐 Authentication Endpoints
-
-#### Register User
-
-* **URL**: `/auth/register`
-* **Method**: `POST`
-* **Body**:
-
-```json
-{
-  "username": "johndoe",
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-**Success Response**:
-
-```json
-{
-  "success": true,
-  "token": "JWT_TOKEN",
-  "data": {
-    "username": "johndoe",
-    "email": "john@example.com",
-    "role": "user",
-    "credits": 10
-  }
-}
-```
-
-**Error**:
-
-```json
-{
-  "success": false,
-  "message": "User already exists with this email"
-}
-```
-
----
-
-#### Login User
-
-* **URL**: `/auth/login`
-* **Method**: `POST`
-* **Body**:
-
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-**Success Response**:
-
-```json
-{
-  "success": true,
-  "token": "JWT_TOKEN",
-  "data": {
-    "username": "johndoe",
-    "email": "john@example.com",
-    "role": "user",
-    "credits": 15
-  }
-}
-```
-
-**Error**:
-
-```json
-{
-  "success": false,
-  "message": "Invalid credentials"
-}
-```
-
----
-
-#### Get Current User
-
-* **URL**: `/auth/me`
-* **Method**: `GET`
-* **Headers**:
-
-  ```
-  Authorization: Bearer <token>
-  ```
-
-**Success Response**:
-
-```json
-{
-  "success": true,
-  "data": {
-    "username": "johndoe",
-    "email": "john@example.com",
-    "role": "user",
-    "credits": 15,
-    "profile": {
-      "bio": "Web developer",
-      "avatar": "https://example.com/avatar.jpg"
-    }
-  }
-}
-```
-
-**Error**:
-
-```json
-{
-  "success": false,
-  "message": "Not authorized to access this route"
-}
-```
-
----
-
-### 📥 Feed Endpoints
-
-#### Get Feed Content
-
-* **URL**: `/feed`
-* **Method**: `GET`
-* **Headers**: `Authorization: Bearer <token>`
-
-**Success**:
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "tw1",
-      "source": "twitter",
-      "title": "Web Development Trends",
-      "description": "Check out these amazing web development trends",
-      "image": "https://example.com/image1.jpg",
-      "url": "https://twitter.com/user/status/123",
-      "upvotes": 42,
-      "comments": 5,
-      "createdAt": "2023-04-25T15:30:00Z"
-    },
-    {
-      "id": "rd1",
-      "source": "reddit",
-      "title": "MERN Stack Tutorial",
-      "description": "A comprehensive guide to MERN stack",
-      "image": "https://example.com/image2.jpg",
-      "url": "https://reddit.com/r/webdev/comments/123",
-      "upvotes": 78,
-      "comments": 23,
-      "createdAt": "2023-04-25T12:15:00Z"
-    }
-  ],
-  "fromCache": false
-}
-```
-
----
-
-#### Save Content
-
-* **URL**: `/feed/save`
-* **Method**: `POST`
-* **Headers**: `Authorization: Bearer <token>`
-* **Body**:
-
-```json
-{
-  "contentId": "tw1",
-  "source": "twitter",
-  "title": "Web Development Trends",
-  "description": "Check out these amazing web development trends",
-  "image": "https://example.com/image1.jpg",
-  "url": "https://twitter.com/user/status/123"
-}
-```
-
-**Success**:
-
-```json
-{
-  "success": true,
-  "message": "Content saved successfully",
-  "creditsEarned": 2
-}
-```
-
----
-
-## 📊 Dashboard Endpoints
-
-* `GET /dashboard` – Get user dashboard data
-* `GET /dashboard/saved` – Get saved content
-* `GET /dashboard/activities` – Get user activities
-* `GET /dashboard/admin` – Admin-only dashboard analytics
-
----
-
-## 🔔 Notification Endpoints
-
-* `GET /notifications` – Get all notifications
-* `PUT /notifications/read` – Mark notifications as read
-
----
-
-## 🧪 Testing
-
-### Backend:
+Server:
 
 ```bash
 cd server
-npm test
+npm ci
+cp .env.example .env   # then fill in the values
+npm run dev            # nodemon server.js, http://localhost:5000
 ```
 
-### Frontend:
+Client, in a second terminal:
 
 ```bash
 cd client
-npm test
+npm ci
+cp .env.example .env
+npm start              # http://localhost:3000
 ```
 
+See the status section above for what has to be fixed before these run.
+
+### Environment variables
+
+Server (`server/.env.example`):
+
+| Name | Purpose |
+| --- | --- |
+| `PORT`, `NODE_ENV` | API port (default 5000) and mode |
+| `MONGO_URI` | MongoDB connection string |
+| `MONGO_URI_TEST` | MongoDB used by `__tests__/auth.test.js` |
+| `JWT_SECRET`, `JWT_EXPIRE` | Token signing key and lifetime (default `30d`) |
+| `REDIS_URL` | Redis for the feed cache (default `redis://localhost:6379`) |
+| `CLIENT_URL` | Allowed Socket.io origin (default `http://localhost:3000`) |
+| `TWITTER_*`, `REDDIT_*` | Read by `utils/apiClients.js`, which the feed does not call yet |
+
+Client (`client/.env.example`):
+
+| Name | Purpose |
+| --- | --- |
+| `REACT_APP_API_URL` | API base URL (default `http://localhost:5000/api`) |
+| `REACT_APP_VAPID_PUBLIC_KEY` | Web push public key for the notification permission prompt |
+
+## API
+
+All routes are under `/api`. Everything except register, login and logout needs `Authorization: Bearer <token>`.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/auth/register` | |
+| POST | `/auth/login` | |
+| GET | `/auth/logout` | |
+| GET | `/auth/me` | |
+| PUT | `/auth/profile` | |
+| GET | `/feed` | |
+| POST | `/feed/save`, `/feed/share`, `/feed/report` | |
+| GET | `/dashboard` | |
+| GET | `/dashboard/saved` | |
+| GET | `/dashboard/admin` | admin only |
+| PUT | `/dashboard/admin/credits/:userId` | admin only |
+| GET | `/notifications` | |
+| PUT | `/notifications/read` | |
+
+## Project structure
+
+```
+client/                React app (Create React App)
+  src/pages/           Dashboard, Feed, Profile, SavedContent, admin/AdminDashboard
+  src/components/      auth, feed, layout, notifications, routing, admin
+  src/context/         AuthContext
+server/                Express API
+  routes/, controllers/, models/, middleware/
+  utils/               Redis cache, Socket.io, notifications, Twitter/Reddit clients
+  __tests__/, tests/   Jest + supertest tests (not wired to npm test)
+API.md                 development notes
 ```
