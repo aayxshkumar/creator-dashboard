@@ -89,7 +89,7 @@ REACT\_APP\_API\_URL=[http://localhost:5000/api](http://localhost:5000/api)
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/aayushkumr/vertx_assignment.git
+   git clone https://github.com/aayxshkumar/creator-dashboard.git
    cd vertx_assignment
 ```
 
